@@ -18,7 +18,7 @@
 import Addon
 import os.path
 import re
-import simplejson as json
+import json
 import urllib, urllib2
 import xbmc
         
@@ -59,15 +59,16 @@ class EightTracks:
     def play(self, mix_id):
         return self._get_json('sets/%s/play' % self._set, {'mix_id': mix_id})
 
-    def next(self, mix_id):
-        return self._get_json('sets/%s/next' % self._set, {'mix_id': mix_id})
+    def next(self, mix_id, suppress_errors=False):
+        return self._get_json('sets/%s/next' % self._set, {'mix_id': mix_id},
+            suppress_errors=suppress_errors)
 
     def next_mix(self, mix_id):
         return self._get_json('sets/%s/next_mix' % self._set, 
                               {'mix_id': mix_id})
 
     def tags(self, page):
-        return self._get_json('all/mixes/tags', {'tag_page': page})
+        return self._get_json('tags', {'tag_page': page})
 
     def _build_url(self, path, queries={}):
         query = Addon.build_query(queries)
@@ -99,7 +100,7 @@ class EightTracks:
             html = False
         return html
 
-    def _get_json(self, method, queries={}):
+    def _get_json(self, method, queries={}, suppress_errors=False):
         json_response = None
         queries['api_key'] = self._API_KEY
         url = self._build_url(method + '.json', queries)
@@ -109,7 +110,8 @@ class EightTracks:
             try:
                 json_response = json.loads(response.read())
             except ValueError:
-                Addon.show_error([Addon.get_string(30005)])
+                if not suppress_errors:
+                    Addon.show_error([Addon.get_string(30005), url])
                 return False
         except urllib2.URLError, e:
             Addon.show_error([Addon.get_string(30006), str(e.reason)])
@@ -155,7 +157,9 @@ class EightTracksPlayer(xbmc.Player):
         if first:
             result = self.et.play(self.mix_id)
         else:
-            result = self.et.next(self.mix_id)
+            result = self.et.next(self.mix_id, suppress_errors=True)
+        if result is False:
+            return
         if result['set']['at_end']:
             Addon.log('moving to next mix')
             result = self.et.next_mix(self.mix_id)

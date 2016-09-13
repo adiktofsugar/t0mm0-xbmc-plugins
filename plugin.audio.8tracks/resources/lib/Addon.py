@@ -30,12 +30,10 @@ except:
     print 'not running on xbmc'
 
 def log(msg, err=False):
+    prefix = addon.getAddonInfo('name')
     if err:
-        xbmc.log(addon.getAddonInfo('name') + ': ' + 
-                 msg.encode('ascii','ignore'), xbmc.LOGERROR)    
-    else:
-        xbmc.output(addon.getAddonInfo('name') + ': ' + 
-                    msg.encode('ascii','ignore'), xbmc.LOGDEBUG)    
+        prefix = "%s ERROR" % prefix
+    xbmc.log("%s: %s" % (prefix, msg.encode('ascii','ignore')))
 
 def show_error(details):
     show_dialog(details, get_string(30000), True)
